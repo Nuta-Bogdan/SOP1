@@ -5,7 +5,6 @@
 
 class CsvFileManager {
 public:
-    CsvFileManager(const std::string& filename) : filename_(filename) {}
 
     void writeRow(const std::string& element1, const std::string& element2, const std::string& element3) {
         std::ofstream file(filename_, std::ios::app);
