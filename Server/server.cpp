@@ -3,9 +3,27 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <chrono>
+#include <iomanip>
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
+
+// Enhanced logging function
+void logServerActivity(const std::string& message) {
+    std::ofstream logFile("server_log.txt", std::ios::app);
+    if (logFile.is_open()) {
+        // Get current time
+        auto now = std::chrono::system_clock::now();
+        auto now_time_t = std::chrono::system_clock::to_time_t(now);
+        logFile << std::put_time(std::localtime(&now_time_t), "%Y-%m-%d %H:%M:%S") << " - " << message << std::endl;
+        logFile.close();
+    } else {
+        std::cerr << "Failed to open log file." << std::endl;
+    }
+}
+
+
 
 int main(){
     int server_fd, new_socket;
@@ -43,20 +61,25 @@ int main(){
         exit(EXIT_FAILURE);
     }
     
-    // Open a file to save the incoming data
-    std::ofstream outputFile("received_file.txt", std::ios::binary);
-    if (!outputFile.is_open()) {
-        perror("Failed to open file");
-        exit(EXIT_FAILURE);
-    }
-    
-    // Read data from the socket and write to the file
-    int bytesRead;
-    while ((bytesRead = read(new_socket, buffer, BUFFER_SIZE)) > 0) {
-        outputFile.write(buffer, bytesRead);
-    }
+    logServerActivity("Server started.");
 
-    outputFile.close();
+    // Main loop for handling client requests
+    while (true) {
+        int bytesRead = read(new_socket, buffer, BUFFER_SIZE);
+        if (bytesRead <= 0) {
+            break; // Exit if no data is received
+        }
+
+        // Handle synchronization request
+        std::string request(buffer, bytesRead);
+        if (request.rfind("update:", 0) == 0) { // Check if it's an update request
+            std::string filename = request.substr(7); // Extract filename
+            // Perform file update logic here
+            logServerActivity("Received update request for: " + filename);
+        }
+    }
+    logServerActivity("Server ended.");
+    
     close(new_socket);
     close(server_fd);
 
