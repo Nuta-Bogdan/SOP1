@@ -61,25 +61,19 @@ int main(){
         exit(EXIT_FAILURE);
     }
     
-    logServerActivity("Server started.");
-
-    // Main loop for handling client requests
-    while (true) {
-        int bytesRead = read(new_socket, buffer, BUFFER_SIZE);
-        if (bytesRead <= 0) {
-            break; // Exit if no data is received
-        }
-
-        // Handle synchronization request
-        std::string request(buffer, bytesRead);
-        if (request.rfind("update:", 0) == 0) { // Check if it's an update request
-            std::string filename = request.substr(7); // Extract filename
-            // Perform file update logic here
-            logServerActivity("Received update request for: " + filename);
-        }
+    std::ofstream outputFile("received_file.txt", std::ios::binary);
+    if (!outputFile.is_open()) {
+        perror("Failed to open file for writing");
+        exit(EXIT_FAILURE);
     }
-    logServerActivity("Server ended.");
-    
+
+    ssize_t read_bytes;
+    while ((read_bytes = read(new_socket, buffer, BUFFER_SIZE)) > 0) {
+        outputFile.write(buffer, read_bytes);
+    }
+
+    std::cout << "File received successfully." << std::endl;
+
     close(new_socket);
     close(server_fd);
 
